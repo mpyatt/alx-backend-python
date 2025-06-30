@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-1-batch_processing.py — Fetch and process MySQL user data in batches using generators.
+1-batch_processing.py — Stream and process users in batches using generators.
 """
 
 import os
@@ -10,8 +10,7 @@ from mysql.connector import Error
 
 def stream_users_in_batches(batch_size):
     """
-    Generator that yields batches (lists) of users from the user_data table.
-    Each batch is a list of dictionaries.
+    Generator that yields batches (lists of dicts) from user_data table.
     """
     try:
         connection = mysql.connector.connect(
@@ -35,9 +34,9 @@ def stream_users_in_batches(batch_size):
         print(f"[ERROR] {e}")
 
     finally:
-        if cursor:
+        if 'cursor' in locals():
             cursor.close()
-        if connection:
+        if 'connection' in locals():
             connection.close()
 
 
