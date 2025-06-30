@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-1-batch_processing.py — batch generator and processor for user_data
+1-batch_processing.py — stream and process users in batches using generators
 """
 
 import os
@@ -10,8 +10,8 @@ from mysql.connector import Error
 
 def stream_users_in_batches(batch_size):
     """
-    Generator that yields lists (batches) of users from the DB.
-    Each batch is a list of dicts.
+    Generator that yields batches (lists) of users from user_data table.
+    Each batch is a list of dicts (one dict per row).
     """
     try:
         connection = mysql.connector.connect(
@@ -29,10 +29,10 @@ def stream_users_in_batches(batch_size):
             batch = cursor.fetchmany(batch_size)
             if not batch:
                 break
-            yield batch  # one loop used here
+            yield batch
 
     except Error as e:
-        print(f"[ERROR] Database error: {e}")
+        print(f"[ERROR] {e}")
 
     finally:
         if cursor:
@@ -43,9 +43,10 @@ def stream_users_in_batches(batch_size):
 
 def batch_processing(batch_size):
     """
-    Generator that yields only users with age > 25, from batches.
+    Generator that processes users in batches and yields users over age 25.
     """
-    for batch in stream_users_in_batches(batch_size):  # 2nd loop
-        for user in batch:  # 3rd loop
+    for batch in stream_users_in_batches(batch_size):  # ✅ 2nd loop
+        for user in batch:  # ✅ 3rd loop
             if user["age"] > 25:
                 print(user)
+                yield user
