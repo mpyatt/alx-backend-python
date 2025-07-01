@@ -10,7 +10,7 @@ from mysql.connector import Error
 
 def stream_users_in_batches(batch_size):
     """
-    Generator that yields batches (lists of dicts) from user_data table.
+    Generator that return batches (lists of dicts) from user_data table.
     """
     try:
         connection = mysql.connector.connect(
