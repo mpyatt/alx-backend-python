@@ -2,15 +2,6 @@
 
 A collection of **mini‑projects** that explore intermediate‑to‑advanced backend patterns in Python. Each directory contains self‑contained, bite‑sized tasks you can run right away to deepen your understanding of decorators, context managers, asynchronous programming, and more—using only SQLite and the Python standard library (plus *aiosqlite* for async examples).
 
-| Directory                               | Focus                        | Highlights                                                                                                                                       |
-| --------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **python‑decorators‑0x01**              | Function decorators          | • Query logging <br>• Automatic connection handling <br>• Transaction management <br>• Retry logic <br>• Result caching                          |
-| **python‑context‑async‑perations‑0x02** | Context managers & async I/O | • Class‑based `__enter__/__exit__` managers <br>• Reusable query execution CM <br>• Concurrent async queries with `asyncio.gather` + `aiosqlite` |
-
-> **Tip 🗒️** Each project has its own *README* with task‑level usage examples.
-
----
-
 ## 🛠️ Prerequisites
 
 * Python **3.8 or higher**
