@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Unit tests for GithubOrgClient methods."""
 
-from unittest.mock import patch, PropertyMock
+from unittest.mock import patch, PropertyMock, Mock
 from parameterized import parameterized, parameterized_class
 from fixtures import org_payload, repos_payload, expected_repos, apache2_repos
 from client import GithubOrgClient
