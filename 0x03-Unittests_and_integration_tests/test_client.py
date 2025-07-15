@@ -86,11 +86,11 @@ class TestGithubOrgClient(unittest.TestCase):
     }
 ])
 class TestIntegrationGithubOrgClient(unittest.TestCase):
-    """Integration test for GithubOrgClient.public_repos using fixture data."""
+    """Integration test class for GithubOrgClient."""
 
     @classmethod
     def setUpClass(cls):
-        """Start patching requests.get and set side_effect for known URLs."""
+        """Set up class-wide mocks for requests.get."""
         cls.get_patcher = patch("requests.get")
         mock_get = cls.get_patcher.start()
 
@@ -110,14 +110,13 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         cls.get_patcher.stop()
 
     def test_public_repos(self):
-        """Test that public_repos returns expected repos."""
+        """Test public_repos returns all repos from fixture data."""
         client = GithubOrgClient("google")
-        self.assertEqual(client.public_repos(), self.expected_repos)
+        result = client.public_repos()
+        self.assertEqual(result, self.expected_repos)
 
     def test_public_repos_with_license(self):
-        """Test that public_repos filters repos by given license key."""
+        """Test public_repos returns only repos with apache-2.0 license."""
         client = GithubOrgClient("google")
-        self.assertEqual(
-            client.public_repos(license="apache-2.0"),
-            self.apache2_repos
-        )
+        result = client.public_repos(license="apache-2.0")
+        self.assertEqual(result, self.apache2_repos)
