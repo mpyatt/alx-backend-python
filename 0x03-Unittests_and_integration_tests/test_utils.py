@@ -25,7 +25,8 @@ class TestAccessNestedMap(unittest.TestCase):
     ])
     def test_access_nested_map(self, nested_map, path, expected):
         """Test that access_nested_map returns correct value for valid paths."""
-        self.assertEqual(access_nested_map(nested_map, path), expected)
+        result = access_nested_map(nested_map, path)
+        self.assertEqual(result, expected)
 
     @parameterized.expand([
         ({}, ("a",)),
@@ -35,7 +36,8 @@ class TestAccessNestedMap(unittest.TestCase):
         """Test that access_nested_map raises KeyError for invalid paths."""
         with self.assertRaises(KeyError) as context:
             access_nested_map(nested_map, path)
-        self.assertEqual(str(context.exception), repr(path[-1]))
+        expected_message = repr(path[-1])
+        self.assertEqual(str(context.exception), expected_message)
 
 
 class TestGetJson(unittest.TestCase):
