@@ -5,8 +5,6 @@ This module contains unit tests for:
 - `access_nested_map`: accessing values in nested dictionaries.
 - `get_json`: fetching and parsing JSON from a URL.
 - `memoize`: caching method results to avoid redundant computation.
-
-Test coverage includes normal cases, exception handling, and mocking.
 """
 
 import unittest
@@ -24,7 +22,9 @@ class TestAccessNestedMap(unittest.TestCase):
         ({"a": {"b": 2}}, ("a", "b"), 2),
     ])
     def test_access_nested_map(self, nested_map, path, expected):
-        """Test that access_nested_map returns correct value for valid paths."""
+        """
+        Test that access_nested_map returns correct value for valid paths.
+        """
         result = access_nested_map(nested_map, path)
         self.assertEqual(result, expected)
 
@@ -33,7 +33,9 @@ class TestAccessNestedMap(unittest.TestCase):
         ({"a": 1}, ("a", "b")),
     ])
     def test_access_nested_map_exception(self, nested_map, path):
-        """Test that access_nested_map raises KeyError for invalid paths."""
+        """
+        Test that access_nested_map raises KeyError for invalid paths.
+        """
         with self.assertRaises(KeyError) as context:
             access_nested_map(nested_map, path)
         expected_message = repr(path[-1])
@@ -48,7 +50,9 @@ class TestGetJson(unittest.TestCase):
         ("http://holberton.io", {"payload": False}),
     ])
     def test_get_json(self, test_url, test_payload):
-        """Test that get_json returns correct JSON and calls requests.get once."""
+        """
+        Test that get_json returns correct JSON and calls requests.get once.
+        """
         with patch("utils.requests.get") as mock_get:
             mock_resp = Mock()
             mock_resp.json.return_value = test_payload
@@ -63,7 +67,9 @@ class TestMemoize(unittest.TestCase):
     """Test suite for the memoize decorator."""
 
     def test_memoize(self):
-        """Test that memoize caches results and calls the method only once."""
+        """
+        Test that memoize caches results and calls the method only once.
+        """
         class TestClass:
             def a_method(self):
                 return 42
