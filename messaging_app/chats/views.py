@@ -9,6 +9,7 @@ using Django REST Framework's ModelViewSet.
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Conversation, Message, User
 from .serializers import (
@@ -62,6 +63,8 @@ class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['conversation']
 
     def perform_create(self, serializer):
         """
