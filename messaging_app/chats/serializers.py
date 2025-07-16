@@ -2,12 +2,7 @@
 """
 Serializers for User, Conversation, and Message models.
 
-These serializers handle:
-- Flat serialization for User
-- Nested serialization for Messages within Conversations
-- Representation of sender info within messages
-
-Nested relationships allow API consumers to view conversation threads with user and message data.
+Includes validation and nested serialization for Conversations and Messages.
 """
 
 from rest_framework import serializers
@@ -17,9 +12,10 @@ from .models import User, Conversation, Message
 class UserSerializer(serializers.ModelSerializer):
     """
     Serializer for the custom User model.
-
-    Includes essential user identity fields. Password is excluded for security.
+    Uses CharField explicitly for phone_number.
     """
+    phone_number = serializers.CharField()
+
     class Meta:
         model = User
         fields = [
@@ -34,12 +30,14 @@ class UserSerializer(serializers.ModelSerializer):
 
 class MessageSerializer(serializers.ModelSerializer):
     """
-    Serializer for Message instances.
-
-    Embeds sender details using the UserSerializer.
-    Sender is read-only to ensure it’s derived from the authenticated user.
+    Serializer for a single Message.
+    Displays sender's full name using SerializerMethodField.
     """
-    sender = UserSerializer(read_only=True)
+    sender_name = serializers.SerializerMethodField()
+
+    def get_sender_name(self, obj):
+        """Returns sender's full name."""
+        return f"{obj.sender.first_name} {obj.sender.last_name}".strip()
 
     class Meta:
         model = Message
@@ -47,19 +45,23 @@ class MessageSerializer(serializers.ModelSerializer):
             'message_id',
             'conversation',
             'sender',
+            'sender_name',
             'message_body',
             'sent_at',
         ]
-        read_only_fields = ['sent_at']
+        read_only_fields = ['sent_at', 'sender', 'sender_name']
+
+    def validate_message_body(self, value):
+        """Ensure message is not empty."""
+        if not value.strip():
+            raise serializers.ValidationError("Message body cannot be empty.")
+        return value
 
 
 class ConversationSerializer(serializers.ModelSerializer):
     """
-    Serializer for Conversation instances.
-
-    Includes:
-    - Participants serialized as user details.
-    - Messages nested via MessageSerializer.
+    Serializer for a Conversation.
+    Includes participants and nested messages.
     """
     participants = UserSerializer(many=True, read_only=True)
     messages = MessageSerializer(many=True, read_only=True, source='messages')
