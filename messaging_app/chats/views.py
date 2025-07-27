@@ -79,5 +79,28 @@ class MessageViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """
         Automatically set the sender as the current user when creating a message.
+        Ensure the sender is a participant in the conversation.
         """
-        serializer.save(sender=self.request.user)
+        conversation_id = self.request.data.get("conversation")
+
+        if not conversation_id:
+            return Response(
+                {"detail": "Missing conversation_id."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            conversation = Conversation.objects.get(id=conversation_id)
+        except Conversation.DoesNotExist:
+            return Response(
+                {"detail": "Conversation not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if self.request.user not in conversation.participants.all():
+            return Response(
+                {"detail": "You are not a participant in this conversation."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer.save(sender=self.request.user, conversation=conversation)
