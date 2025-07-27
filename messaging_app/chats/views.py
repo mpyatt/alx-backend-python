@@ -22,12 +22,17 @@ class ConversationViewSet(viewsets.ModelViewSet):
     """
     ViewSet for listing and creating Conversations.
 
-    - GET /api/conversations/ → list all conversations
+    - GET /api/conversations/ → list all conversations for the current user
     - POST /api/conversations/ → create a new conversation
     """
-    queryset = Conversation.objects.all()
     serializer_class = ConversationSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Only return conversations where the current user is a participant.
+        """
+        return Conversation.objects.filter(participants=self.request.user)
 
     def create(self, request, *args, **kwargs):
         """
@@ -57,14 +62,19 @@ class MessageViewSet(viewsets.ModelViewSet):
     """
     ViewSet for listing and sending messages.
 
-    - GET /api/messages/ → list all messages
+    - GET /api/messages/ → list all messages in conversations the user participates in
     - POST /api/messages/ → send a new message
     """
-    queryset = Message.objects.all()
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['conversation']
+
+    def get_queryset(self):
+        """
+        Only return messages from conversations where the current user is a participant.
+        """
+        return Message.objects.filter(conversation__participants=self.request.user)
 
     def perform_create(self, serializer):
         """
