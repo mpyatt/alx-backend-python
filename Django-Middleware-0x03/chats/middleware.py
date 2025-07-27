@@ -16,7 +16,7 @@ logger.addHandler(handler)
 
 class RequestLoggingMiddleware:
     """
-    Middleware to log each user’s request with timestamp, user, and path.
+    Logs each user's requests with timestamp, user, and path.
     """
 
     def __init__(self, get_response):
@@ -30,8 +30,7 @@ class RequestLoggingMiddleware:
 
 class RestrictAccessByTimeMiddleware:
     """
-    Middleware that restricts access to chat routes outside 6PM to 9PM.
-    Returns 403 Forbidden if accessed outside allowed hours.
+    Restricts access to chat routes outside 6PM to 9PM.
     """
 
     def __init__(self, get_response):
@@ -49,20 +48,18 @@ class RestrictAccessByTimeMiddleware:
 
 class OffensiveLanguageMiddleware:
     """
-    Middleware to limit chat messages to 5 per minute per IP address.
-    Blocks excessive POST requests and returns 429 Too Many Requests.
+    Limits users to 5 POSTs/minute to /api/messages to prevent abuse.
     """
 
     def __init__(self, get_response):
         self.get_response = get_response
-        self.message_logs = defaultdict(list)  # {ip: [timestamps]}
+        self.message_logs = defaultdict(list)
 
     def __call__(self, request):
         if request.method == "POST" and request.path.startswith("/api/messages"):
             ip = self.get_client_ip(request)
             now = timezone.now()
 
-            # Keep only timestamps within the last minute
             recent_timestamps = [
                 ts for ts in self.message_logs[ip]
                 if now - ts < timedelta(minutes=1)
@@ -81,10 +78,35 @@ class OffensiveLanguageMiddleware:
 
     @staticmethod
     def get_client_ip(request):
-        """
-        Retrieve the client IP address from headers or remote address.
-        """
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
         if x_forwarded_for:
             return x_forwarded_for.split(",")[0].strip()
         return request.META.get("REMOTE_ADDR")
+
+
+class RolePermissionMiddleware:
+    """
+    Restricts access to certain chat features to only users with 'admin' or 'moderator' roles.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # Define paths where role check is required
+        protected_paths = ["/api/moderate",
+                           "/api/admin/ban", "/api/messages/delete"]
+
+        if request.path in protected_paths:
+            if not request.user.is_authenticated:
+                return JsonResponse({"detail": "Authentication required."}, status=401)
+
+            user_role = getattr(request.user, "role", None)
+
+            if user_role not in ["admin", "moderator"]:
+                return JsonResponse(
+                    {"detail": "Permission denied: admin or moderator role required."},
+                    status=403
+                )
+
+        return self.get_response(request)
