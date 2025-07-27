@@ -84,16 +84,15 @@ class OffensiveLanguageMiddleware:
         return request.META.get("REMOTE_ADDR")
 
 
-class RolePermissionMiddleware:
+class RolepermissionMiddleware:
     """
-    Restricts access to certain chat features to only users with 'admin' or 'moderator' roles.
+    Restricts access to chat features to users with 'admin' or 'moderator' roles.
     """
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        # Define paths where role check is required
         protected_paths = ["/api/moderate",
                            "/api/admin/ban", "/api/messages/delete"]
 
