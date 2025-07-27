@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 ViewSets for managing conversations and messages.
 
@@ -16,6 +15,8 @@ from .serializers import (
     ConversationSerializer,
     MessageSerializer
 )
+from .pagination import MessagePagination
+from .filters import MessageFilter
 
 
 class ConversationViewSet(viewsets.ModelViewSet):
@@ -67,8 +68,9 @@ class MessageViewSet(viewsets.ModelViewSet):
     """
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = MessagePagination
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['conversation']
+    filterset_class = MessageFilter
 
     def get_queryset(self):
         """
