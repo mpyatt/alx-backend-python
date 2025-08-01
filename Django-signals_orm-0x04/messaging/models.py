@@ -10,9 +10,27 @@ class Message(models.Model):
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     edited = models.BooleanField(default=False)
+    parent_message = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        related_name='replies',
+        on_delete=models.CASCADE
+    )
 
     def __str__(self):
         return f"From {self.sender.username} to {self.receiver.username}"
+
+    def get_all_replies(self):
+        replies = []
+
+        def recurse(message):
+            for reply in message.replies.all():
+                replies.append(reply)
+                recurse(reply)
+
+        recurse(self)
+        return replies
 
 
 class Notification(models.Model):
