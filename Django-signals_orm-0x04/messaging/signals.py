@@ -1,9 +1,8 @@
-from .models import Message, MessageHistory
 from django.utils.timezone import now
-from django.db.models.signals import pre_save
-from django.db.models.signals import post_save
+from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
-from .models import Message, Notification
+from .middleware import get_current_user
+from .models import Message, MessageHistory, Notification
 
 
 @receiver(post_save, sender=Message)
@@ -26,6 +25,6 @@ def log_message_edit(sender, instance, **kwargs):
         MessageHistory.objects.create(
             message=instance,
             old_content=old_instance.content,
-            edited_at=now()
+            edited_by=get_current_user(),  # captures the editor
         )
         instance.edited = True
