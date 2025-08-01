@@ -17,3 +17,14 @@ class SignalTestCase(TestCase):
         notification = Notification.objects.first()
         self.assertEqual(notification.user, self.receiver)
         self.assertEqual(notification.message, msg)
+
+    def test_message_edit_logs_history(self):
+        msg = Message.objects.create(
+            sender=self.sender, receiver=self.receiver, content="Hello!")
+        msg.content = "Hello, edited!"
+        msg.save()
+
+        self.assertTrue(msg.edited)
+        self.assertEqual(msg.history.count(), 1)
+        history = msg.history.first()
+        self.assertEqual(history.old_content, "Hello!")
