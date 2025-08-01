@@ -2,6 +2,7 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth import logout, get_user_model
+from django.views.decorators.cache import cache_page
 from .models import Message
 
 User = get_user_model()
@@ -16,6 +17,7 @@ def delete_user(request):
     return JsonResponse({'detail': 'User account deleted successfully.'}, status=204)
 
 
+@cache_page(60)
 @login_required
 def threaded_conversation(request):
     messages = Message.objects.filter(
