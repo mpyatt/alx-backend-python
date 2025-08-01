@@ -28,3 +28,14 @@ class SignalTestCase(TestCase):
         self.assertEqual(msg.history.count(), 1)
         history = msg.history.first()
         self.assertEqual(history.old_content, "Hello!")
+
+    def test_user_deletion_cleans_up_related_data(self):
+        msg = Message.objects.create(
+            sender=self.sender, receiver=self.receiver, content="Hi")
+        Notification.objects.create(user=self.receiver, message=msg)
+
+        self.sender.delete()
+
+        self.assertFalse(Message.objects.filter(sender=self.sender).exists())
+        self.assertFalse(Notification.objects.filter(
+            user=self.receiver).exists())
