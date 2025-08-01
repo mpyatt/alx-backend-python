@@ -40,7 +40,10 @@ def threaded_conversation(request):
 
 @login_required
 def unread_messages(request):
-    messages = Message.unread.for_user(request.user)
+    messages = Message.unread.unread_for_user(
+        request.user)
+    messages = messages.only('id', 'sender', 'content',
+                             'timestamp')
     data = [
         {
             'id': msg.id,
