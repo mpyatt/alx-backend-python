@@ -36,3 +36,18 @@ def threaded_conversation(request):
         response.append(thread)
 
     return JsonResponse({'threads': response})
+
+
+@login_required
+def unread_messages(request):
+    messages = Message.unread.for_user(request.user)
+    data = [
+        {
+            'id': msg.id,
+            'sender_id': msg.sender_id,
+            'content': msg.content,
+            'timestamp': msg.timestamp,
+        }
+        for msg in messages
+    ]
+    return JsonResponse({'unread_messages': data})
