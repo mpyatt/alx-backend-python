@@ -1,4 +1,4 @@
-name: messaging app
+version: "3.9"
 
 services:
   db:
@@ -7,9 +7,11 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_DB: ${MYSQL_DB}
+      MYSQLUSER: ${MYSQLUSER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DB}
+      MYSQL_USER: ${MYSQLUSER}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:
       - "3306:3306"
@@ -29,12 +31,11 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_DB: ${MYSQL_DB}
+      MYSQLUSER: ${MYSQLUSER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_HOST: db
       MYSQL_PORT: "3306"
-
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
       DJANGO_DEBUG: ${DJANGO_DEBUG}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
@@ -43,13 +44,7 @@ services:
         condition: service_healthy
     ports:
       - "8000:8000"
-    command: [
-      "gunicorn",
-      "messaging_app.wsgi:application",
-      "--bind","0.0.0.0:8000",
-      "--workers","3",
-      "--timeout","90"
-    ]
+    command: ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
 
 volumes:
   db_data:
