@@ -1,4 +1,4 @@
-version: "3.9"
+name: messaging app
 
 services:
   db:
