@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: messaging-app:2.0
+          image: messaging-app
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
