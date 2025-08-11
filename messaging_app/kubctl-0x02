@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# kubctl-0x02 — Blue/Green deploy + gradual switch + log checks (messaging-app)
+
+set -euo pipefail
+
+NAMESPACE="${NAMESPACE:-default}"
+DEPLOY_BLUE="${DEPLOY_BLUE:-messaging-app-blue}"
+DEPLOY_GREEN="${DEPLOY_GREEN:-messaging-app-green}"
+SERVICE_NAME="${SERVICE_NAME:-messaging-app}"
+APP_LABEL="${APP_LABEL:-messaging-app}"
+
+BLUE_START="${BLUE_START:-2}"
+GREEN_PHASE1="${GREEN_PHASE1:-1}"
+BLUE_PHASE1="${BLUE_PHASE1:-2}"
+GREEN_PHASE2="${GREEN_PHASE2:-3}"
+BLUE_PHASE2="${BLUE_PHASE2:-0}"
+
+log()  { printf "\033[1;34m[INFO]\033[0m %s\n" "$*"; }
+warn() { printf "\033[1;33m[WARN]\033[0m %s\n" "$*"; }
+err()  { printf "\033[1;31m[ERR ]\033[0m %s\n" "$*" >&2; }
+need() { command -v "$1" >/dev/null 2>&1 || { err "Missing $1"; exit 1; }; }
+
+apply_manifests() {
+  log "Applying blue, green, and service manifests..."
+  kubectl apply -f messaging_app/blue_deployment.yaml -n "$NAMESPACE"
+  kubectl apply -f messaging_app/green_deployment.yaml -n "$NAMESPACE"
+  kubectl apply -f messaging_app/kubeservice.yaml -n "$NAMESPACE"
+}
+
+rollout_wait() { kubectl rollout status deploy/"$1" -n "$NAMESPACE"; }
+
+scale_to() {
+  log "Scaling deploy/$1 to replicas=$2"
+  kubectl scale deploy/"$1" --replicas="$2" -n "$NAMESPACE"
+}
+
+show_endpoints() {
+  log "Service endpoints:"
+  kubectl get endpoints "$SERVICE_NAME" -n "$NAMESPACE" -o wide || true
+}
+
+check_green_logs() {
+  log "Checking logs for green pods..."
+  local pods
+  pods=$(kubectl get pods -n "$NAMESPACE" -l app="$APP_LABEL",color=green -o name)
+  [ -z "$pods" ] && { warn "No green pods yet."; return 0; }
+  local failed=0
+  while read -r pod; do
+    log "Logs for $pod (tail 200):"
+    kubectl logs -n "$NAMESPACE" "$pod" --tail=200 || true
+    if kubectl logs -n "$NAMESPACE" "$pod" --tail=200 | grep -Eqi "Traceback|ERROR|Exception"; then
+      failed=1; warn "Potential errors detected in $pod."
+    fi
+  done <<< "$pods"
+  return $failed
+}
+
+verify_pods() {
+  log "Pods (label app=$APP_LABEL):"
+  kubectl get pods -n "$NAMESPACE" -l app="$APP_LABEL" -o wide
+}
+
+main() {
+  need kubectl
+
+  apply_manifests
+
+  scale_to "$DEPLOY_BLUE" "$BLUE_START"
+  rollout_wait "$DEPLOY_BLUE"
+
+  scale_to "$DEPLOY_GREEN" "$GREEN_PHASE1"
+  rollout_wait "$DEPLOY_GREEN"
+  verify_pods
+  show_endpoints
+
+  if ! check_green_logs; then
+    err "Errors found in green logs. Aborting switch."
+    exit 2
+  fi
+
+  scale_to "$DEPLOY_BLUE" "$BLUE_PHASE1"
+  rollout_wait "$DEPLOY_BLUE"
+  show_endpoints
+
+  scale_to "$DEPLOY_GREEN" "$GREEN_PHASE2"
+  rollout_wait "$DEPLOY_GREEN"
+  scale_to "$DEPLOY_BLUE" "$BLUE_PHASE2"
+  rollout_wait "$DEPLOY_BLUE"
+  verify_pods
+  show_endpoints
+
+  log "Blue/Green switch complete ✅"
+  log "Tip: delete old blue when ready: kubectl delete deploy/$DEPLOY_BLUE -n $NAMESPACE"
+}
+
+main "$@"

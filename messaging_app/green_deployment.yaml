@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: messaging-app-green
+  labels:
+    app: messaging-app
+    color: green
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: messaging-app
+      color: green
+  template:
+    metadata:
+      labels:
+        app: messaging-app
+        color: green
+    spec:
+      containers:
+        - name: web
+          image: messaging-app:green
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: messaging_app.settings
+          readinessProbe:
+            tcpSocket: { port: 8000 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: 8000 }
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits: { cpu: "500m", memory: "256Mi" }
