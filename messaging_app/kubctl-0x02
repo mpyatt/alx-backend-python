@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# kubctl-0x02 — Blue/Green deploy + gradual switch + log checks (messaging-app)
+# Blue/Green deploy + gradual switch + log checks
 
 set -euo pipefail
 
