@@ -1,0 +1,15 @@
+# Enable NGINX Ingress on Minikube
+minikube addons enable ingress
+
+# Apply the Ingress resource
+kubectl apply -f messaging_app/ingress.yaml
+
+# Verify the Ingress object
+kubectl get ingress
+kubectl describe ingress messaging-api-ingress
+
+# Map the host to your Minikube IP for local testing
+echo "$(minikube ip) api.messaging.local" | sudo tee -a /etc/hosts
+
+# Test the API path
+curl -i http://api.messaging.local/api/
