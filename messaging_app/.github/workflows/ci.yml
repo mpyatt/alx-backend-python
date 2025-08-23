@@ -1,0 +1,90 @@
+name: CI (tests + lint + coverage)
+
+on:
+  push:
+    paths:
+      - 'messaging_app/**'
+  pull_request:
+    paths:
+      - 'messaging_app/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test_db
+          MYSQL_USER: django
+          MYSQL_PASSWORD: django
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: System deps for mysqlclient
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-libmysqlclient-dev
+
+      - name: Install dependencies
+        working-directory: messaging_app
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt || true
+          pip install pytest pytest-django pytest-cov flake8 mysqlclient
+
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -uroot -proot --silent; then
+              echo "MySQL is up!"
+              exit 0
+            fi
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+          echo "MySQL failed to start in time"
+          exit 1
+
+      - name: Lint (flake8)
+        working-directory: messaging_app
+        run: flake8 .
+
+      - name: Run tests (pytest) with coverage
+        working-directory: messaging_app
+        env:
+          DJANGO_SETTINGS_MODULE: messaging_app.settings
+          # If your Django settings read the DB from env vars, set them here or via DATABASE_URL:
+          # DATABASE_URL: mysql://django:django@127.0.0.1:3306/test_db
+          # Or set the classic variables your settings.py expects:
+          DB_NAME: test_db
+          DB_USER: django
+          DB_PASSWORD: django
+          DB_HOST: 127.0.0.1
+          DB_PORT: '3306'
+        run: |
+          mkdir -p reports
+          pytest --junitxml=reports/junit.xml --cov=. \
+                 --cov-report=xml:reports/coverage.xml
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: messaging_app/reports
